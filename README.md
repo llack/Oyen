@@ -40,9 +40,8 @@ Built with Electron, Vite, and CodeMirror 6. Runs on Windows, macOS, and Linux.
 Pre-built installers are published on the [Releases](../../releases) page:
 
 - **Windows** — installer (`.exe`) and a portable build
-- **Linux** — `.AppImage`
 
-macOS builds aren't published yet — build from source for now (see below).
+macOS and Linux builds aren't published yet — build from source for now (see below).
 
 ## Build from source
 
