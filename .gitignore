@@ -41,3 +41,7 @@ Thumbs.db
 *.tmp
 *.temp
 *.log
+
+# Local AI working files (not published)
+CLAUDE.md
+.claude/
