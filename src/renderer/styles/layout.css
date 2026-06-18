@@ -1,0 +1,501 @@
+body.is-busy,
+body.is-busy * { cursor: none !important; }
+body.is-busy * { pointer-events: none !important; }
+body.is-busy .confirm-backdrop,
+body.is-busy .confirm-backdrop * { pointer-events: auto !important; cursor: auto !important; }
+
+#busy-spinner-wrap {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+  z-index: 1100;
+  display: none;
+}
+body.is-busy #busy-spinner-wrap { display: block; }
+
+.busy-spinner-inner {
+  width: 24px;
+  height: 24px;
+  margin-left: -12px;
+  margin-top: -12px;
+  border: 4px solid var(--accent-tint-ring);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: busy-spin 0.7s linear infinite;
+}
+
+@keyframes busy-spin {
+  to { transform: rotate(360deg); }
+}
+
+.main { display: grid; grid-template-columns: 275px 2px 1fr; min-height: 0; }
+
+.left {
+  background: var(--panel-sub-bg);
+  display: grid;
+  grid-template-rows: 28px 30px 1fr 2px 1fr;
+  min-height: 0;
+}
+
+/* Even if the splitter leaves an inline grid-template-rows on .left (for directory), ignore it in project/git view. */
+.left[data-view="project"] { grid-template-rows: 28px 1fr !important; }
+.left[data-view="project"] > .profile-row,
+.left[data-view="project"] > .tree,
+.left[data-view="project"] > .h-resizer,
+.left[data-view="project"] > .filelist { display: none; }
+.left[data-view="directory"] > .project-list,
+.left[data-view="directory"] > .git-panel { display: none; }
+.left[data-view="project"] > .git-panel { display: none; }
+.left[data-view="git"] { grid-template-rows: 28px 1fr !important; }
+.left[data-view="git"] > .profile-row,
+.left[data-view="git"] > .tree,
+.left[data-view="git"] > .h-resizer,
+.left[data-view="git"] > .filelist,
+.left[data-view="git"] > .project-list { display: none; }
+
+
+.project-list {
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--panel-sub-bg);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.project-list-empty {
+  padding: 16px 12px;
+  color: var(--fg-disabled);
+  font-size: 12px;
+}
+.project-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 24px 1fr auto auto;
+  align-items: stretch;
+  gap: 4px;
+  padding: 7px 8px 7px 2px;
+  color: var(--text);
+  font-size: 14px;
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+}
+.project-row.dragging { opacity: 0.45; }
+/* Reorder drop position = an accent line floating in the middle of the gap (6px) between cards. */
+.project-row.drag-over-top::before,
+.project-row.drag-over-bottom::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--accent);
+}
+.project-row.drag-over-top::before { top: -4px; }
+.project-row.drag-over-bottom::after { bottom: -4px; }
+
+.project-row-body { min-width: 0; }
+.project-row-name { display: flex; align-items: center; gap: 5px; min-width: 0; }
+/* Project label = bold text (chip removed). */
+.project-row-text {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0;
+  color: var(--fg);
+  font-weight: 600;
+}
+.project-row-path { display: block; color: var(--fg-disabled); font-size: 11px; margin-top: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.project-drag {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  align-self: stretch;
+  color: var(--fg-disabled);
+  cursor: grab;
+}
+.project-drag:hover { color: var(--fg-alt); background: var(--overlay-light); }
+.project-drag:active { cursor: grabbing; }
+.project-drag svg { width: 16px; height: 16px; pointer-events: none; }
+
+.project-action {
+  width: 24px;
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 0;
+  color: var(--fg-disabled);
+  cursor: pointer;
+  padding: 0;
+}
+.project-action svg { width: 16px; height: 16px; flex-shrink: 0; }
+/* The drag grip (span) isn't caught by the global button:focus rule, so handle it separately. */
+.project-drag:focus { outline: none; }
+.project-action:hover { color: var(--accent); background: var(--overlay-light-3); }
+/* Trash = red tone for light backgrounds. */
+.project-delete { color: var(--git-deleted); }
+.project-delete:hover { color: var(--git-deleted); background: color-mix(in srgb, var(--git-deleted) 14%, transparent); }
+
+/* Height is controlled by the first .left grid row (28px). border-box keeps border-bottom inside the track so it isn't hidden (prevents the row below from covering it). */
+.left-tabs { display: flex; align-items: center; box-sizing: border-box; border-bottom: 1px solid var(--line); background: var(--panel-sub-bg); }
+.left-tab {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  padding: 0 10px;
+  border-right: 1px solid var(--line);
+  color: var(--fg);
+  cursor: pointer;
+  user-select: none;
+}
+/* display:flex overrides [hidden] (display:none), so restore it explicitly — keeps the git tab hide behavior. */
+.left-tab[hidden] { display: none; }
+/* Badge for the git tab's changed-file count. */
+.left-tab-badge {
+  margin-left: 6px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 5px;
+  box-sizing: border-box;
+  border-radius: 8px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.left-tab-badge[hidden] { display: none; }
+.left-tab:hover { color: var(--fg-alt); }
+.left-tab.active { color: var(--fg); background: var(--accent-tint); }
+
+.profile-row { padding: 0; background: var(--panel-sub-bg); }
+
+.root-select {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+.root-select-trigger {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 0 10px;
+  border: 0;
+  /* border-top removed — it overlapped the tab's bottom line and looked 2px thick. Keep only the bottom divider. */
+  border-bottom: 1px solid var(--line-strong);
+  background: transparent;
+  color: var(--fg);
+  font-size: 13px;
+  cursor: pointer;
+  outline: none;
+  text-align: left;
+}
+.root-select-label {
+  flex: 1 1 auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.root-select-arrow {
+  flex: 0 0 auto;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 5px solid var(--fg-muted);
+}
+
+.root-select-options {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+  background: var(--bg-dropdown);
+  border: 1px solid var(--line-strong);
+  border-top: 0;
+  box-shadow: 0 6px 16px var(--shadow-deep);
+  z-index: 50;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+.root-select-option {
+  padding: 6px 12px;
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.root-select-option:hover { background: var(--accent-tint-hover); color: var(--fg); }
+.root-select-option.active { background: var(--accent-tint); color: var(--fg); }
+.root-select-option.active:hover { background: var(--accent-tint); color: var(--fg); }
+.root-select-icon {
+  flex: 0 0 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* Remote (world line icon) uses stroke=currentColor, so its color is decided here. Local folders are solid (fill) and unaffected → use --folder-icon. */
+  color: var(--accent);
+}
+.root-select-icon svg { width: 16px; height: 16px; stroke-width: 1.6; }
+.root-select-option.active .root-select-icon { color: var(--accent); }
+.root-select-option-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+select:focus,
+select:focus-visible,
+select:active {
+  outline: none;
+  box-shadow: none;
+  border-color: var(--bg-input-border);
+}
+
+.h-resizer {
+  background: var(--line-strong);
+  cursor: row-resize;
+}
+.h-resizer:hover { background: var(--accent); }
+
+.v-resizer {
+  background: var(--line-strong);
+  cursor: col-resize;
+}
+.v-resizer:hover { background: var(--accent); }
+
+.right {
+  background: var(--editor-bg);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.right-top {
+  flex: 1 1 0;
+  position: relative;
+  min-height: 0;
+}
+
+/* Find/replace strip — inline overlay at the editor's top right (VSCode tone, token colors only). */
+.search-strip {
+  position: absolute;
+  top: 8px;
+  right: 137px;
+  z-index: 12;
+  width: 390px;            /* fixed width — aligns the find/replace two-row inputs */
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px;
+  background: var(--bg-dropdown);
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
+}
+.search-line { display: flex; align-items: center; gap: 4px; }
+/* field is fixed width → both input rows match. Buttons after the field are flush right. */
+.search-field + .search-btn { margin-left: auto; }
+/* display:flex outranks [hidden]{display:none} (UA) by specificity, so the hidden attribute is ignored → hide it explicitly. */
+.search-strip[hidden], .search-line[hidden] { display: none; }
+.search-field {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex: 0 0 auto;
+  width: 210px;
+  min-width: 0;
+  background: var(--bg-base);
+  border: 1px solid var(--border-strong);
+  padding: 0 4px;
+}
+.search-strip.search-invalid .search-field { border-color: var(--git-deleted); }
+.search-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--fg);
+  font-size: 12px;
+  padding: 4px 2px;
+  outline: none;
+}
+.search-input::placeholder { color: var(--fg-placeholder); }
+.search-count {
+  color: var(--fg-dim);
+  font-size: 11px;
+  padding: 0 4px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.search-opt {
+  border: 0;
+  background: transparent;
+  color: var(--fg-dim);
+  font-size: 11px;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 auto;
+  cursor: pointer;
+}
+.search-opt:hover { background: var(--accent-tint-hover); color: var(--accent); }
+.search-opt.is-active { background: var(--accent-tint-soft); color: var(--accent); }
+.search-btn {
+  border: 0;
+  background: transparent;
+  color: var(--fg);
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  cursor: pointer;
+  font-size: 13px;
+  line-height: 1;
+}
+.search-btn:hover { background: var(--accent-tint-hover); color: var(--accent); }
+.search-btn.is-active { background: var(--accent-tint-soft); color: var(--accent); }
+.search-btn.search-text { width: auto; padding: 0 8px; font-size: 12px; }
+
+/* VS Code-style breadcrumb bar (below tabs, above editor) — folder > file > symbol. Colors from token variables only.
+   height 28px = same as the md/image preview toolbar (so the top bar height doesn't jump on tab switch). */
+.breadcrumb-bar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  height: 28px;
+  padding: 0 10px;
+  font-size: 12px;
+  color: var(--fg-muted);
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  user-select: none;
+}
+.breadcrumb-bar[hidden] { display: none; }
+.breadcrumb-bar .bc-symbols { color: var(--fg); }
+
+/* Shown when dragging an external file over — same tone as the file/tree .drop-target (1px dashed accent, -2px, faint tint). */
+.right-top.editor-drop-over::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  pointer-events: none;
+  background: var(--accent-tint-faint);
+  outline: 1px dashed var(--accent);
+  outline-offset: -2px;
+}
+
+.terminal-resizer {
+  flex: 0 0 2px;
+  background: var(--line-strong);
+  cursor: row-resize;
+  user-select: none;
+}
+.terminal-resizer:hover { background: var(--accent); }
+.terminal-resizer[hidden] { display: none !important; }
+
+.terminal-host {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  /* The terminal stays fixed at the default regardless of app theme color — matched to the xterm content background (#1e1e1e) so padding blends seamlessly. */
+  background: #1e1e1e;
+  border-top: 1px solid var(--bg-line-border);
+  min-height: 0;
+}
+.terminal-host[hidden] { display: none !important; }
+
+.terminal-header {
+  flex: 0 0 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 8px;
+  /* The terminal header (panel) follows the app theme color — only the xterm window (.terminal-host) is fixed. */
+  background: var(--bg-dropdown);
+  border-bottom: 1px solid var(--bg-line-border);
+  color: var(--fg-muted);
+  font-size: 12px;
+  user-select: none;
+}
+
+.terminal-close {
+  width: 22px;
+  height: 18px;
+  border: 0;
+  background: transparent;
+  color: var(--fg-muted);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  padding: 0;
+}
+.terminal-close:hover { background: var(--overlay-light-4); color: var(--fg-bright); }
+
+.terminal-progress { flex: 0 0 2px; position: relative; top: auto; }
+.terminal-progress[hidden] { display: none !important; }
+
+.terminal-xterm {
+  flex: 1 1 0;
+  min-height: 0;
+  padding: 4px 8px;
+  overflow: hidden;
+}
+
+.editor-host {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.editor-pane {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  position: relative;
+}
+
+.editor-resizer {
+  flex: 0 0 8px;
+  /* The editor is fixed dark (#1e1e1e) — if transparent, the light app background shows through the gap as a white line. Matched to the editor color. */
+  background: #1e1e1e;
+  cursor: row-resize;
+  user-select: none;
+  position: relative;
+}
+.editor-resizer::before {
+  content: '';
+  position: absolute;
+  left: 0; right: 0; top: 50%;
+  height: 2px;
+  transform: translateY(-50%);
+  background: var(--line-strong);
+}
+.editor-resizer:hover::before { background: var(--accent); }

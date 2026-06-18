@@ -1,0 +1,9 @@
+﻿@import './styles/tokens.css';
+@import './styles/topbar.css';
+@import './styles/layout.css';
+@import './styles/dialogs.css';
+@import './styles/tree.css';
+@import 'github-markdown-css/github-markdown-light.css';
+@import './styles/preview.css';
+@import './styles/git.css';
+@import './styles/settings.css';

@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oyen</title>
+  <link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+  <div class="menubar" id="menubar"></div>
+
+  <div class="toolbar">
+    <button class="tool-btn" id="toolNewFile" data-tabler-icon="newFile" data-i18n-aria="toolbar.newFile" data-i18n-title="toolbar.newFile"></button>
+    <button class="tool-btn" id="toolOpenFolder" data-tabler-icon="openFolder" data-i18n-aria="toolbar.openFolder" data-i18n-title="toolbar.openFolder"></button>
+    <span class="toolbar-separator"></span>
+    <button class="tool-btn" id="toolSave" data-tabler-icon="save" data-i18n-aria="toolbar.save" data-i18n-title="toolbar.save"></button>
+    <button class="tool-btn" id="toolSaveAll" data-tabler-icon="saveAll" data-i18n-aria="toolbar.saveAll" data-i18n-title="toolbar.saveAll"></button>
+    <span class="toolbar-separator"></span>
+    <button class="tool-btn" id="toolDelete" data-tabler-icon="deleteSel" data-i18n-aria="toolbar.delete" data-i18n-title="toolbar.delete"></button>
+    <button class="tool-btn" id="toolCut" data-tabler-icon="cut" data-i18n-aria="toolbar.cut" data-i18n-title="toolbar.cut"></button>
+    <button class="tool-btn" id="toolCopy" data-tabler-icon="copy" data-i18n-aria="toolbar.copy" data-i18n-title="toolbar.copy"></button>
+    <button class="tool-btn" id="toolPaste" data-tabler-icon="paste" data-i18n-aria="toolbar.paste" data-i18n-title="toolbar.paste"></button>
+    <span class="toolbar-separator"></span>
+    <button class="tool-btn" id="toolReload" data-tabler-icon="reload" data-i18n-aria="toolbar.reload" data-i18n-title="toolbar.reload"></button>
+    <button class="tool-btn" id="toolRevealFile" data-tabler-icon="revealFile" data-i18n-aria="toolbar.revealFile" data-i18n-title="toolbar.revealFile"></button>
+    <span class="toolbar-separator"></span>
+    <button class="tool-btn" id="toolUndo" data-tabler-icon="undo" data-i18n-aria="toolbar.undo" data-i18n-title="toolbar.undo"></button>
+    <button class="tool-btn" id="toolRedo" data-tabler-icon="redo" data-i18n-aria="toolbar.redo" data-i18n-title="toolbar.redo"></button>
+    <span class="toolbar-separator"></span>
+    <div class="font-size-control" data-i18n-title="toolbar.fontSize">
+      <button class="tool-btn font-size-btn" id="toolFontMinus" data-i18n-aria="toolbar.fontSizeDecrease">−</button>
+      <span class="font-size-label" id="fontSizeLabel">14</span>
+      <button class="tool-btn font-size-btn" id="toolFontPlus" data-i18n-aria="toolbar.fontSizeIncrease">+</button>
+    </div>
+    <span class="toolbar-separator"></span>
+    <button class="tool-btn" id="toolWordWrap" data-tabler-icon="wordWrap" data-i18n-aria="toolbar.wordWrap" data-i18n-title="toolbar.wordWrap" aria-pressed="false"></button>
+    <button class="tool-btn" id="toolMinimap" data-tabler-icon="minimap" data-i18n-aria="toolbar.minimap" data-i18n-title="toolbar.minimap" aria-pressed="true"></button>
+    <button class="tool-btn" id="toolSyncDirectory" data-tabler-icon="syncDirectory" data-i18n-aria="toolbar.syncDirectory" data-i18n-title="toolbar.syncDirectory" aria-pressed="false"></button>
+  </div>
+
+  <div class="tabbar">
+    <button class="tabbar-refresh" id="refreshActiveView" data-i18n-aria="toolbar.refresh"></button>
+    <div class="tabs" id="editorTabs"></div>
+    <div class="tabbar-actions" id="tabbarActions">
+      <button class="tabbar-action" id="terminalToggleBtn" data-tabler-icon="terminal" data-i18n-aria="toolbar.terminal" data-i18n-title="toolbar.terminal"></button>
+      <button class="tabbar-action" id="splitEditorBtn" data-tabler-icon="splitEditor" data-i18n-aria="toolbar.splitEditor" data-i18n-title="toolbar.splitEditor"></button>
+    </div>
+  </div>
+
+  <div class="main" id="mainLayout">
+    <aside class="left" id="leftPane" data-view="directory">
+      <div class="left-tabs">
+        <div class="left-tab active" data-left-tab="directory" data-i18n="sidebar.tab.directory"></div>
+        <div class="left-tab" data-left-tab="project" data-i18n="sidebar.tab.project"></div>
+        <div class="left-tab" data-left-tab="git" hidden><span data-i18n="sidebar.tab.git"></span><span class="left-tab-badge" hidden></span></div>
+      </div>
+      <div class="profile-row">
+        <div id="pathRootSelect"></div>
+      </div>
+      <div class="tree" id="treeRoot"></div>
+      <div class="h-resizer" id="treeSplit" data-i18n-aria="aria.treeFileSplit"></div>
+      <div class="filelist" id="fileListRoot" tabindex="0"></div>
+      <div class="project-list" id="projectListRoot"></div>
+      <div class="git-panel" id="gitPanelRoot"></div>
+    </aside>
+
+    <div class="v-resizer" id="mainSplit" data-i18n-aria="aria.leftEditorSplit"></div>
+
+    <section class="right">
+      <div id="markdownToolbar" class="markdown-toolbar" hidden></div>
+      <div id="breadcrumbBar" class="breadcrumb-bar" hidden></div>
+      <div class="right-top" id="rightTop">
+        <div id="editorRoot" class="editor-host" data-i18n-aria="aria.editorHost"></div>
+        <div id="imagePreviewRoot" class="preview-root" hidden></div>
+      </div>
+      <div class="terminal-resizer" id="terminalResizer" data-i18n-aria="aria.terminalSplit" hidden></div>
+      <div class="terminal-host" id="terminalHost" hidden>
+        <div class="terminal-header">
+          <span class="terminal-title" data-i18n="toolbar.terminal"></span>
+          <button class="terminal-close" id="terminalCloseBtn" data-i18n-aria="toolbar.closeTerminal" data-i18n-title="toolbar.closeTerminal">×</button>
+        </div>
+        <div class="panel-loading terminal-progress" id="terminalProgress" hidden><div class="panel-loading-bar"></div></div>
+        <div class="terminal-xterm" id="terminalXtermHost"></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="status" id="statusBar"></div>
+
+  <div class="settings-backdrop" id="editorSettingsModal" hidden>
+    <section class="settings-shell" role="dialog" aria-modal="true" data-i18n-aria="settings.title">
+      <header class="settings-header">
+        <div class="settings-title" data-i18n="settings.title"></div>
+        <button class="settings-close" id="closeEditorSettings" data-i18n-aria="settings.close">
+          <span class="codicon codicon-close" aria-hidden="true"></span>
+        </button>
+      </header>
+
+      <div class="settings-body">
+        <nav class="settings-nav">
+          <button class="settings-nav-item active" data-settings-tab="editor" data-i18n="settings.tab.editor"></button>
+          <button class="settings-nav-item" data-settings-tab="shortcuts" data-i18n="settings.tab.shortcuts"></button>
+        </nav>
+
+        <div class="settings-content">
+          <section class="settings-pane" data-pane="editor">
+            <div class="settings-pane-head">
+              <h2 data-i18n="settings.tab.editor"></h2>
+              <button type="button" class="settings-btn" id="editorResetBtn" data-i18n="settings.general.reset"></button>
+            </div>
+            <div class="settings-editor-fields">
+              <label class="settings-field">
+                <span data-i18n="settings.editor.indent"></span>
+                <select id="indentTypeSelect" class="settings-select">
+                  <option value="auto" data-i18n="settings.editor.indent.auto"></option>
+                  <option value="tab" data-i18n="settings.editor.indent.tab"></option>
+                  <option value="space" data-i18n="settings.editor.indent.space"></option>
+                </select>
+              </label>
+              <label class="settings-field">
+                <span data-i18n="settings.editor.tabSize"></span>
+                <select id="tabSizeSelect" class="settings-select">
+                  <option value="2">2</option>
+                  <option value="4">4</option>
+                  <option value="8">8</option>
+                </select>
+              </label>
+            </div>
+            <div class="colors-body" id="colorsDetail"></div>
+          </section>
+
+          <section class="settings-pane" data-pane="shortcuts" hidden>
+            <div class="settings-pane-head">
+              <h2 data-i18n="settings.tab.shortcuts"></h2>
+              <button type="button" class="settings-btn" id="shortcutsResetBtn" data-i18n="settings.shortcuts.reset"></button>
+            </div>
+            <p style="margin: 0 0 12px; color: #a8a8a8;" data-i18n="settings.shortcuts.help"></p>
+            <div class="shortcut-list" id="shortcutList"></div>
+          </section>
+
+        </div>
+      </div>
+
+      <footer class="settings-footer">
+        <button class="settings-btn" id="cancelEditorSettings" data-i18n="dlg.cancel"></button>
+        <button class="settings-btn primary" id="saveEditorSettings" data-i18n="dlg.save"></button>
+      </footer>
+    </section>
+  </div>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>

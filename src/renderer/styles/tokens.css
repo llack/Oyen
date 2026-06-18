@@ -1,0 +1,287 @@
+/* UI font = Pretendard (bundled, OFL). A single Variable file covers all weights. Editor/terminal use --font-mono (separate). */
+@font-face {
+  font-family: 'Pretendard';
+  src: url('./fonts/PretendardVariable.woff2') format('woff2');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Editor/terminal mono fallback = Cascadia Mono (bundled, OFL, no ligatures = Consolas tone). Single Variable file.
+   Windows prefers system Consolas (Cascadia looks bolder); OSes without Consolas (mac, etc.) fall back to the bundled font. */
+@font-face {
+  font-family: 'Cascadia Mono';
+  src: url('./fonts/CascadiaMono.woff2') format('woff2');
+  font-weight: 200 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* =============================================================================
+ * OYEN colors — tweaking just the ~25 core variables shifts the entire tone.
+ * The ALIAS section below exists for backward compatibility with existing css (do not edit directly).
+ * ============================================================================ */
+:root {
+  /* ===== Core tones ======================================================== */
+
+  /* Accent */
+  --accent:                 #e07b00;
+  --accent-hover:           #e6932e;
+  --accent-tint-faint:      rgba(224, 123, 0, 0.12); /* hover */
+  --accent-tint:            rgba(224, 123, 0, 0.20); /* active */
+  --accent-tint-strong:     rgba(224, 123, 0, 0.38); /* press */
+  --accent-glow:            rgba(224, 123, 0, 0.55);
+  --accent-text:            #000000;
+
+  /* Background — light tones (light theme) */
+  --bg-base:                #ffffff;  /* window / tabbar */
+  --bg-panel:               #f3f3f3;  /* side view / menu / editor / status bar */
+  --bg-panel-alt:           #f3f3f3;  /* toolbar */
+  --bg-elevated:            #f0f0f0;  /* modal / terminal */
+  --bg-dropdown:            #f2f2f2;  /* context menu / dropdown */
+  --bg-active:              #e6e6e6;  /* active tab / divider emphasis */
+  --bg-button:              #ebebeb;
+  --bg-button-hover:        #dcdcdc;
+
+  /* Border */
+  --border:                 #c6c6c6;
+  --border-strong:          #b0b0b0;
+
+  /* Text */
+  --fg-bright:              #000000;
+  --fg:                     #000000;
+  --fg-muted:               #6d6d6d;
+  --fg-dim:                 #999999;
+  --fg-placeholder:         #b3b3b3;
+
+  /* Semantic (deep tones for light backgrounds) */
+  --color-success:          #2e7d32;
+  --color-error:            #c62828;
+  --color-warning:          #b86e00;
+
+  /* Overlay / Shadow */
+  --overlay-soft:           rgba(255, 255, 255, 0.04);
+  --overlay:                rgba(255, 255, 255, 0.07);
+  --backdrop:               rgba(0, 0, 0, 0.45);
+  --shadow:                 rgba(0, 0, 0, 0.35);
+  --shadow-deep:            rgba(0, 0, 0, 0.50);
+
+  /* Scrollbar */
+  --scrollbar-thumb:        rgba(150, 150, 150, 0.55);
+  --scrollbar-thumb-hover:  rgba(180, 180, 180, 0.70);
+
+  /* Special (light backgrounds within a dark theme) */
+  --bg-image-preview:       hsl(0, 0%, 90%);
+  --bg-pdf-page:            #ffffff;
+  --bg-markdown:            var(--bg-base);  /* matched to the github-markdown-light body (white) */
+  --folder-icon:            var(--accent);
+
+  /* Mono font stack (shared by editor/terminal/UI mono) */
+  --font-mono:              Consolas, 'Cascadia Mono', Menlo, 'Pretendard', monospace;
+  /* UI font (entire chrome = inherited from body). Pretendard first, OS fallback if it fails to load */
+  --font-ui:                'Pretendard', "Segoe UI", "Malgun Gothic", sans-serif;
+
+  /* ===== ALIAS (backward compat with existing css — do not edit directly) === */
+
+  /* accent variants → consolidated into 3 core levels */
+  --accent-tint-hover:      var(--accent-tint-faint);
+  --accent-tint-soft:       var(--accent-tint);
+  --accent-tint-ring:       var(--accent-tint);
+  --accent-tint-active:     var(--accent-tint);
+  --accent-tint-deep:       var(--accent-tint-strong);
+  --accent-tint-press:      var(--accent-tint-strong);
+  --accent-tint-flash:      var(--accent-tint-strong);
+  --accent-border:          var(--accent);
+  --accent-text-soft:       var(--accent-text);
+  --accent-text-strong:     var(--fg-bright);
+  --accent-text-light:      var(--accent-text);
+  --accent-text-mid:        var(--accent-text);
+
+  /* bg variants → consolidated into core tones */
+  --bg-window:              var(--bg-base);
+  --bg-media-deep:          var(--bg-base);
+  --bg-media:               var(--bg-panel);
+  --bg-panel-deep:          var(--bg-panel);
+  --bg-input:               var(--bg-panel);
+  --bg-preview-root:        var(--bg-panel-alt);
+  --bg-modal:               var(--bg-elevated);
+  --bg-line:                var(--bg-panel-alt);
+  --bg-tab-active:          var(--bg-active);
+  --bg-surface-hover:       var(--bg-active);
+  --bg-confirm-btn:         var(--bg-button);
+  --bg-line-border:         var(--border);
+  --bg-border-hover:        var(--border-strong);
+  --bg-button-deep:         var(--border-strong);
+  --bg-modal-border:        var(--border-strong);
+  --bg-input-border:        var(--border-strong);
+
+  /* fg variants → consolidated into 4 levels */
+  --fg-heading:             var(--fg-bright);
+  --fg-strong:              var(--fg);
+  --fg-alt:                 var(--fg);
+  --fg-soft:                var(--fg-muted);
+  --fg-muted-alt:           var(--fg-muted);
+  --fg-dim-alt:             var(--fg-muted);
+  --fg-faint:               var(--fg-dim);
+  --fg-faint-alt:           var(--fg-dim);
+  --fg-disabled:            var(--fg-dim);
+  --fg-disabled-alt:        var(--fg-dim);
+  --fg-icon:                var(--fg-dim);
+
+  /* semantic variants → consolidated into 3 core colors */
+  --color-danger:           var(--color-error);
+  --color-danger-bg:        rgba(214, 138, 138, 0.15);
+  --color-danger-bg-soft:   rgba(214, 138, 138, 0.10);
+  --color-danger-border:    rgba(214, 138, 138, 0.30);
+  --color-danger-border-hover: rgba(214, 138, 138, 0.50);
+  --color-error-bg:         rgba(210, 75, 75, 0.24);
+  --color-error-border:     rgba(210, 75, 75, 0.50);
+  --color-error-light:      #ffd8d8;
+  --color-error-input-bg:   rgba(196, 68, 68, 0.18);
+  --color-warning-icon:     var(--color-warning);
+  --color-info:             var(--fg-muted);
+
+  /* overlay / shadow variants → consolidated */
+  --overlay-light:          var(--overlay-soft);
+  --overlay-light-2:        var(--overlay-soft);
+  --overlay-light-3:        var(--overlay);
+  --overlay-light-4:        var(--overlay);
+  --overlay-line-soft:      var(--overlay-soft);
+  --overlay-media-shine:    var(--overlay-soft);
+  --overlay-media-outline:  var(--overlay);
+  --backdrop-soft:          rgba(0, 0, 0, 0.38);
+  --shadow-soft:            var(--shadow);
+  --shadow-medium:          var(--shadow);
+  --shadow-strong:          var(--shadow-deep);
+  --shadow-deep-2:          var(--shadow-deep);
+
+  /* git status colors. When reworking the whole theme, edit only here.
+     - file/folder marker (tree, file list): modified is yellow (--git-modified)
+     - CM6 diff gutter: modified is blue (--git-gutter-modified). Same split as VSCode. */
+  --git-modified:           #bf8700;
+  --git-untracked:          #2e7d32;
+  --git-deleted:            #c62828;
+  --git-gutter-modified:    #2280f0;
+
+  /* Legacy shorthand variables (leftovers from old code) */
+  --win-bg:                 var(--bg-base);
+  --menu-bg:                var(--bg-panel);
+  --toolbar-bg:             var(--bg-panel-alt);
+  --line:                   var(--border);
+  --line-strong:            var(--border);
+  --panel-bg:               var(--bg-panel);
+  --panel-sub-bg:           var(--bg-panel-alt);
+  --editor-bg:              var(--bg-panel);
+  --text:                   var(--fg);
+  --tab-bg:                 var(--bg-base);
+  --status-bg:              var(--bg-panel-alt);
+  --status-text:            var(--fg-bright);
+}
+
+* { box-sizing: border-box; }
+
+/* Form controls default to the UA font and don't inherit body (Pretendard) → force global inheritance.
+   Inputs that need mono (dialogs, etc.) override with var(--font-mono) individually (higher specificity). */
+button, input, textarea, select { font-family: inherit; }
+
+/* Globally remove the button focus border (UA focus ring) — including the :focus-visible border that appeared on key input (e.g. Shift) after a click.
+   Aligns with the app-wide tone of conveying state via hover/active only, without outlines. */
+button:focus,
+button:focus-visible { outline: none; }
+
+/* Global checkbox/radio unification — fully custom via appearance:none (accent fill + white check/dot).
+   Native accent-color is dropped because it renders inconsistently across OSes and dark mode (e.g. rendered black). flex-shrink:0 prevents squashing inside flex. */
+input[type="checkbox"],
+input[type="radio"] {
+  appearance: none;
+  -webkit-appearance: none;
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  border: 1px solid var(--border-strong);
+  background: #fff;
+  cursor: pointer;
+}
+input[type="checkbox"] { border-radius: 3px; }
+input[type="radio"] { border-radius: 50%; }
+/* Checkbox = accent fill + white checkmark. */
+input[type="checkbox"]:checked {
+  background-color: var(--accent);
+  border-color: var(--accent);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3.5 8.5l3 3 6-6.5'/%3E%3C/svg%3E");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
+}
+/* Radio = white background + accent border + accent center dot (not a donut). */
+input[type="radio"]:checked {
+  border-color: var(--accent);
+  background-image: radial-gradient(circle, var(--accent) 0 3.5px, transparent 4px);
+}
+input[type="checkbox"]:disabled,
+input[type="radio"]:disabled { opacity: 0.45; cursor: default; }
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border: 3px solid transparent;
+  border-radius: 999px;
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+  border: 3px solid transparent;
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-ui);
+  font-size: 13px;
+  color: var(--status-text);
+  background: var(--win-bg);
+  height: 100vh;
+  display: grid;
+  grid-template-rows: 30px 30px 32px 1fr 24px;
+  overflow: hidden;
+  /* Desktop app chrome UI blocks text selection by default. Only areas that need to be selectable are excepted separately. */
+  user-select: none;
+}
+
+/* Only areas that need text selection/copy are excepted as selectable. */
+input,
+textarea,
+[contenteditable="true"],
+.cm-content,
+.markdown-body,
+.markdown-body *,
+.xterm,
+.xterm *,
+.conn-log,
+.conn-log * {
+  user-select: text;
+}
