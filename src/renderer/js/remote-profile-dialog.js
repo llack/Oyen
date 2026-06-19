@@ -196,11 +196,12 @@ export function editRemoteProfileDialog(initial = null, options = {}) {
             <span>FTPS (TLS)</span>
           </label>
 
-          <label id="rfJumpToggleLabel" for="rfJumpEnable">${t('site.field.jump')}</label>
-          <label id="rfJumpCheck" for="rfJumpEnable" style="display: flex; align-items: center; gap: 6px;">
-            <input id="rfJumpEnable" type="checkbox" />
-            <span>${t('site.jump.enable')}</span>
-          </label>
+          <label id="rfRouteLabel">${t('site.field.route')}</label>
+          <div class="remote-os-options" id="rfRouteOptions">
+            <label class="remote-auth-option"><input type="radio" name="rfRoute" value="none" /><span>${t('site.route.none')}</span></label>
+            <label class="remote-auth-option"><input type="radio" name="rfRoute" value="jump" /><span>${t('site.route.jump')}</span></label>
+            <label class="remote-auth-option"><input type="radio" name="rfRoute" value="proxy" /><span>${t('site.route.proxy')}</span></label>
+          </div>
 
           <div id="rfJumpFields" class="remote-jump-fields">
             <label for="rfJumpHost">${t('site.field.host')}</label>
@@ -231,6 +232,21 @@ export function editRemoteProfileDialog(initial = null, options = {}) {
 
             <label id="rfJumpPassLabel" for="rfJumpPassphrase">${t('site.field.passphrase')}</label>
             ${pwField('rfJumpPassphrase')}
+          </div>
+
+          <div id="rfProxyFields" class="remote-jump-fields">
+            <label for="rfProxyHost">${t('site.field.host')}</label>
+            <div class="remote-row-pair">
+              <input id="rfProxyHost" class="confirm-input" type="text" autocomplete="off" spellcheck="false" />
+              <span class="remote-port-label">${t('site.field.port')}</span>
+              <input id="rfProxyPort" class="confirm-input" type="text" inputmode="numeric" maxlength="5" autocomplete="off" placeholder="8080" />
+            </div>
+
+            <label for="rfProxyUser">${t('site.field.user')}</label>
+            <input id="rfProxyUser" class="confirm-input" type="text" autocomplete="off" spellcheck="false" />
+
+            <label id="rfProxyPwLabel" for="rfProxyPassword">${t('site.field.password')}</label>
+            ${pwField('rfProxyPassword')}
           </div>
         </div>
 
@@ -267,7 +283,8 @@ export function editRemoteProfileDialog(initial = null, options = {}) {
     const passEl = $('rfPassphrase');
     const secureEl = $('rfSecure');
     const osOptionsEl = $('rfOsOptions');
-    const jumpEnableEl = $('rfJumpEnable');
+    const routeOptionsEl = $('rfRouteOptions');
+    const getRoute = () => routeOptionsEl.querySelector('input:checked')?.value || 'none';
     const getOs = () => osOptionsEl.querySelector('input:checked')?.value || 'linux';
     const jumpHostEl = $('rfJumpHost');
     const jumpPortEl = $('rfJumpPort');
@@ -277,6 +294,10 @@ export function editRemoteProfileDialog(initial = null, options = {}) {
     const jumpPemEl = $('rfJumpPem');
     const jumpPemPickBtn = $('rfJumpPemPick');
     const jumpPassEl = $('rfJumpPassphrase');
+    const proxyHostEl = $('rfProxyHost');
+    const proxyPortEl = $('rfProxyPort');
+    const proxyUserEl = $('rfProxyUser');
+    const proxyPwEl = $('rfProxyPassword');
     const testBtn = $('rfTest');
     const errorEl = $('rfError');
 
@@ -294,12 +315,18 @@ export function editRemoteProfileDialog(initial = null, options = {}) {
     osOptionsEl.querySelector(`input[value="${seedOs}"]`).checked = true;
 
     const seedJump = seed.jump || null;
-    jumpEnableEl.checked = !!(seedJump && seedJump.host);
+    const seedProxy = seed.proxy || null;
+    /* Routing is mutually exclusive — proxy wins if both somehow exist, else jump, else direct. */
+    const seedRoute = seedProxy?.host ? 'proxy' : (seedJump?.host ? 'jump' : 'none');
+    routeOptionsEl.querySelector(`input[value="${seedRoute}"]`).checked = true;
     jumpHostEl.value = seedJump?.host || '';
     jumpPortEl.value = seedJump?.port ? String(seedJump.port) : '';
     jumpUserEl.value = seedJump?.username || '';
     jumpAuthEl.value = ['private-key-auto', 'private-key-pem'].includes(seedJump?.authType) ? seedJump.authType : 'password';
     jumpPemEl.value = seedJump?.privateKeyPath || '';
+    proxyHostEl.value = seedProxy?.host || '';
+    proxyPortEl.value = seedProxy?.port ? String(seedProxy.port) : '';
+    proxyUserEl.value = seedProxy?.username || '';
 
     // Reload stored password/passphrase — only in edit mode and when on the original protocol.
     // Split into a function so it can refill after switching back from another protocol.
@@ -312,6 +339,7 @@ export function editRemoteProfileDialog(initial = null, options = {}) {
         if (s?.passphrase && !passEl.value) passEl.value = s.passphrase;
         if (s?.jumpPassword && !jumpPwEl.value) jumpPwEl.value = s.jumpPassword;
         if (s?.jumpPassphrase && !jumpPassEl.value) jumpPassEl.value = s.jumpPassphrase;
+        if (s?.proxyPassword && !proxyPwEl.value) proxyPwEl.value = s.proxyPassword;
       }).catch(() => {});
     }
     reloadStoredSecrets();
@@ -370,12 +398,14 @@ export function editRemoteProfileDialog(initial = null, options = {}) {
       $('rfOsLabel').style.display = isSftp ? '' : 'none';
       osOptionsEl.style.display = isSftp ? '' : 'none';
 
-      /* Jump host (proxy) — SFTP-only. Show the inner fields only when the toggle is on. */
-      $('rfJumpToggleLabel').style.display = isSftp ? '' : 'none';
-      $('rfJumpCheck').style.display = isSftp ? 'flex' : 'none';
-      const showJump = isSftp && jumpEnableEl.checked;
-      const jumpFields = $('rfJumpFields');
-      jumpFields.style.display = showJump ? '' : 'none';
+      /* Connection routing (jump host / HTTP proxy) — SFTP-only, mutually exclusive radio. */
+      const route = getRoute();
+      $('rfRouteLabel').style.display = isSftp ? '' : 'none';
+      routeOptionsEl.style.display = isSftp ? '' : 'none';
+      const showJump = isSftp && route === 'jump';
+      const showProxy = isSftp && route === 'proxy';
+      $('rfJumpFields').style.display = showJump ? '' : 'none';
+      $('rfProxyFields').style.display = showProxy ? '' : 'none';
       if (showJump) {
         const jumpPw = jumpAuthEl.value === 'password';
         const jumpPem = jumpAuthEl.value === 'private-key-pem';
@@ -439,7 +469,7 @@ export function editRemoteProfileDialog(initial = null, options = {}) {
 
     /* Identifier fields that never contain spaces — strip leading/trailing whitespace live (avoids paste footguns).
        Passwords/passphrases may contain inner spaces → no live trim, only trim on save (collectSecret). */
-    [hostEl, userEl, jumpHostEl, jumpUserEl].forEach((el) => {
+    [hostEl, userEl, jumpHostEl, jumpUserEl, proxyHostEl, proxyUserEl].forEach((el) => {
       el.addEventListener('input', () => {
         const stripped = el.value.replace(/^\s+|\s+$/g, '');
         if (stripped !== el.value) el.value = stripped;
@@ -458,11 +488,15 @@ export function editRemoteProfileDialog(initial = null, options = {}) {
     });
 
     authOptionsEl.addEventListener('change', () => { seed.authType = authOptionsEl.value; updateFieldVisibility(); });
-    jumpEnableEl.addEventListener('change', updateFieldVisibility);
+    routeOptionsEl.addEventListener('change', updateFieldVisibility);
     jumpAuthEl.addEventListener('change', updateFieldVisibility);
     jumpPortEl.addEventListener('input', () => {
       const cleaned = jumpPortEl.value.replace(/[^0-9]/g, '');
       if (cleaned !== jumpPortEl.value) jumpPortEl.value = cleaned;
+    });
+    proxyPortEl.addEventListener('input', () => {
+      const cleaned = proxyPortEl.value.replace(/[^0-9]/g, '');
+      if (cleaned !== proxyPortEl.value) proxyPortEl.value = cleaned;
     });
     jumpPemPickBtn.addEventListener('click', async (event) => {
       event.preventDefault();
@@ -521,9 +555,13 @@ export function editRemoteProfileDialog(initial = null, options = {}) {
       setTimeout(() => { btn.innerHTML = iconCopy; btn.classList.remove('copied'); }, 1200);  /* copy feedback (intentional UX delay) */
     });
 
-    /* Jump host applies only with SFTP + toggle ON + a host entered. Otherwise null (removed from the profile). */
+    /* Jump host applies only with SFTP + route='jump' + a host entered. Otherwise null (removed from the profile). */
     function jumpEnabled() {
-      return typeEl.value === 'sftp' && jumpEnableEl.checked && !!jumpHostEl.value.trim();
+      return typeEl.value === 'sftp' && getRoute() === 'jump' && !!jumpHostEl.value.trim();
+    }
+    /* HTTP proxy applies only with SFTP + route='proxy' + a host entered. Mutually exclusive with jump. */
+    function proxyEnabled() {
+      return typeEl.value === 'sftp' && getRoute() === 'proxy' && !!proxyHostEl.value.trim();
     }
 
     function collectProfile() {
@@ -548,6 +586,12 @@ export function editRemoteProfileDialog(initial = null, options = {}) {
         authType: ['private-key-auto', 'private-key-pem'].includes(jumpAuthEl.value) ? jumpAuthEl.value : 'password',
         privateKeyPath: jumpPemEl.value.trim()
       } : null;
+      profile.proxy = proxyEnabled() ? {
+        type: 'http',
+        host: proxyHostEl.value.trim(),
+        port: Number(proxyPortEl.value) || 8080,
+        username: proxyUserEl.value.trim()
+      } : null;
       return profile;
     }
 
@@ -562,6 +606,8 @@ export function editRemoteProfileDialog(initial = null, options = {}) {
         if (jumpAuthEl.value === 'password') out.jumpPassword = trimEdge(jumpPwEl.value);
         else if (jumpAuthEl.value === 'private-key-pem') out.jumpPassphrase = trimEdge(jumpPassEl.value);
       }
+      /* Proxy password is optional (no-auth proxies exist) — store whatever is entered; empty is dropped by setSecret. */
+      if (proxyEnabled()) out.proxyPassword = trimEdge(proxyPwEl.value);
       return out;
     }
 
@@ -572,15 +618,19 @@ export function editRemoteProfileDialog(initial = null, options = {}) {
     function validate(profile, secret) {
       if (!profile.name) return t('site.error.label');
       if (!profile.host) return t('site.error.host');
-      if (profile.apiKey && takenApiKeys.includes(profile.apiKey)) return t('site.error.apiKeyDup');
+      /* Skip the uniqueness check for derived folder projects — their apiKey is an inherited copy of the origin profile's, not an independent registration. */
+      if (profile.apiKey && !seed.derivedRemote && takenApiKeys.includes(profile.apiKey)) return t('site.error.apiKeyDup');
       if (profile.type === 'sftp') {
         if (profile.authType === 'password' && !secret.password) return t('site.error.password');
         if (profile.authType === 'private-key-pem' && !profile.privateKeyPath) return t('site.error.keyFile');
       }
       if (profile.type === 'ftp' && !secret.password) return t('site.error.password');
-      if (typeEl.value === 'sftp' && jumpEnableEl.checked) {
+      if (typeEl.value === 'sftp' && getRoute() === 'jump') {
         if (!jumpHostEl.value.trim()) return t('site.error.jumpHost');
         if (jumpAuthEl.value === 'private-key-pem' && !jumpPemEl.value.trim()) return t('site.error.jumpKeyFile');
+      }
+      if (typeEl.value === 'sftp' && getRoute() === 'proxy' && !proxyHostEl.value.trim()) {
+        return t('site.error.proxyHost');
       }
       return '';
     }

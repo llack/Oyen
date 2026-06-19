@@ -2,7 +2,7 @@ const posixPath = require('path').posix;
 const { Readable } = require('stream');
 const settingsStore = require('../settings-store');
 const secretStore = require('../remote-secret-store');
-const { connectClient, openJump } = require('../remote-connection');
+const { connectClient, openJump, makeProxySock } = require('../remote-connection');
 const { decodeTextBuffer } = require('../local-file-system');
 
 const MAX_TEXT_BYTES = 1024 * 1024 * 2;
@@ -108,7 +108,9 @@ async function ensureConnection(authority) {
       let client;
       try {
         jump = await openJump(profile, secret);
-        client = await connectClient(profile, secret, jump?.makeSock || null);
+        /* jump and proxy are mutually exclusive — fall back to the HTTP proxy sock when there's no jump. */
+        const makeSock = jump?.makeSock || (profile.proxy?.host ? makeProxySock(profile, secret) : null);
+        client = await connectClient(profile, secret, makeSock);
       } catch (err) {
         if (jump) jump.cleanup();
         throw err;

@@ -85,7 +85,8 @@ export function createProjectPanel({
 
   async function addRemote() {
     const keyInfo = await getKeyInfo();
-    const takenApiKeys = ((getSettings().projects) || []).map((p) => (p.apiKey || '').trim()).filter(Boolean);
+    /* Only connection profiles own a quick-open key — derived folder projects carry an inherited copy, so exclude them from the uniqueness source. */
+    const takenApiKeys = ((getSettings().projects) || []).filter((p) => !p.derivedRemote).map((p) => (p.apiKey || '').trim()).filter(Boolean);
     const result = await editRemoteProfileDialog(null, { keyInfo, takenApiKeys });
     if (!result) return;
     const { profile, secret } = result;
@@ -105,7 +106,8 @@ export function createProjectPanel({
     const cur = list[idx];
     if (!cur || !isRemoteProject(cur)) return;
     const keyInfo = await getKeyInfo();
-    const takenApiKeys = list.filter((p) => p.id !== cur.id).map((p) => (p.apiKey || '').trim()).filter(Boolean);
+    /* Exclude self (id) and all derived folder projects (their keys are inherited copies, not independent registrations). */
+    const takenApiKeys = list.filter((p) => p.id !== cur.id && !p.derivedRemote).map((p) => (p.apiKey || '').trim()).filter(Boolean);
     const result = await editRemoteProfileDialog(cur, { keyInfo, takenApiKeys });
     if (!result) return;
     const { profile, secret } = result;

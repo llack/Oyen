@@ -2,6 +2,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const crypto = require('crypto');
+const net = require('net');
 const knownHostsStore = require('./known-hosts-store');
 const { requestHostVerify } = require('../ipc/host-verify-ipc');
 
@@ -128,7 +129,7 @@ function buildSshConfig(profile, secret, keyData, hooks = {}) {
 
 /* Log masking — replace the FTP PASS command (> PASS …) with '***', and also any actual secret value (4+ chars) that might leak with '***'. */
 function makeMasker(secret) {
-  const vals = [secret?.password, secret?.passphrase, secret?.jumpPassword, secret?.jumpPassphrase]
+  const vals = [secret?.password, secret?.passphrase, secret?.jumpPassword, secret?.jumpPassphrase, secret?.proxyPassword]
     .filter((v) => v && String(v).length >= 4);
   return (m) => {
     let s = String(m).replace(/(\bPASS\s+)\S.*$/i, '$1***');
@@ -210,6 +211,67 @@ async function openJump(profile, secret, onLog) {
   };
 }
 
+/* HTTP CONNECT proxy — returns a makeSock factory that opens a fresh tunneled socket per attempt (mirrors openJump's makeSock).
+   The socket is handed to ssh2 via config.sock and owned by it afterwards, so there's no persistent resource to clean up.
+   Note: connectClient awaits makeSock() *outside* its resettable connect timer, so this carries its own timeout. */
+function makeProxySock(profile, secret, onLog) {
+  const proxy = profile.proxy || {};
+  const proxyHost = proxy.host;
+  const proxyPort = Number(proxy.port) || 8080;
+  const targetHost = profile.host;
+  const targetPort = profile.port || 22;
+  const log = (m) => { try { onLog?.(String(m)); } catch {} };
+  return () => new Promise((resolve, reject) => {
+    let settled = false;
+    let buf = Buffer.alloc(0);
+    const socket = net.connect(proxyPort, proxyHost);
+    const timer = setTimeout(() => fail(new Error('Proxy CONNECT timeout')), 12000);
+    function fail(err) {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      try { socket.destroy(); } catch {}
+      reject(err);
+    }
+    function onData(chunk) {
+      buf = Buffer.concat([buf, chunk]);
+      const idx = buf.indexOf('\r\n\r\n');
+      if (idx === -1) return;  /* wait for the full response header */
+      const statusLine = buf.slice(0, idx).toString('utf8').split('\r\n')[0];
+      log(`< ${statusLine}`);
+      const code = Number((/^HTTP\/1\.[01]\s+(\d{3})/.exec(statusLine) || [])[1]) || 0;
+      if (code === 200) {
+        settled = true;
+        clearTimeout(timer);
+        socket.removeListener('data', onData);
+        socket.removeListener('error', onErr);
+        /* Some proxies bundle the SSH banner right after the 200 line — push leftover bytes back so ssh2 reads them. */
+        const leftover = buf.slice(idx + 4);
+        if (leftover.length) socket.unshift(leftover);
+        /* Pause before handoff so no 'data' fires into the void in the gap; ssh2 re-resumes when it attaches its listener. */
+        socket.pause();
+        resolve(socket);
+        return;
+      }
+      if (code === 407) { fail(new Error('Proxy authentication required (407)')); return; }
+      fail(new Error(`Proxy CONNECT failed: ${statusLine || 'no response'}`));
+    }
+    function onErr(err) { fail(err); }
+    socket.once('error', onErr);
+    socket.once('connect', () => {
+      log(`connected ${proxyHost}:${proxyPort} → CONNECT ${targetHost}:${targetPort}`);
+      let req = `CONNECT ${targetHost}:${targetPort} HTTP/1.1\r\nHost: ${targetHost}:${targetPort}\r\n`;
+      if (proxy.username) {
+        const cred = Buffer.from(`${proxy.username}:${secret?.proxyPassword || ''}`).toString('base64');
+        req += `Proxy-Authorization: Basic ${cred}\r\n`;
+      }
+      req += 'Proxy-Connection: keep-alive\r\n\r\n';
+      socket.write(req);
+    });
+    socket.on('data', onData);
+  });
+}
+
 async function testSftp(profile, secret, onLog) {
   const mask = makeMasker(secret);
   /* Lines for the encrypted bytes carried by the tunnel (CHANNEL_DATA) are uninformative noise → drop them.
@@ -219,10 +281,12 @@ async function testSftp(profile, secret, onLog) {
     if (/CHANNEL_DATA \(r:/i.test(s)) return;
     try { onLog?.(s); } catch {}
   };
-  /* With a jump, the debug output of both the jump and target connections mixes into one log, so prefix [jump]/[target] to distinguish the source. */
+  /* With a jump/proxy, the debug output of multiple connections mixes into one log, so prefix [jump]/[proxy]/[target] to distinguish the source. */
   const hasJump = !!profile.jump?.host;
+  const hasProxy = !hasJump && !!profile.proxy?.host;  /* jump and proxy are mutually exclusive (one sock source) */
   const jumpLog = hasJump ? (m) => log(`[jump] ${m}`) : log;
-  const targetLog = hasJump ? (m) => log(`[target] ${m}`) : log;
+  const proxyLog = (m) => log(`[proxy] ${m}`);
+  const targetLog = (hasJump || hasProxy) ? (m) => log(`[target] ${m}`) : log;
   let jump = null;
   try {
     if (hasJump) {
@@ -232,7 +296,8 @@ async function testSftp(profile, secret, onLog) {
         return { ok: false, message: `Jump host: ${err?.message || String(err)}` };
       }
     }
-    const conn = await connectClient(profile, secret, jump?.makeSock || null, targetLog);
+    const makeSock = jump?.makeSock || (hasProxy ? makeProxySock(profile, secret, proxyLog) : null);
+    const conn = await connectClient(profile, secret, makeSock, targetLog);
     const ver = conn._remoteVer || '';
     try { conn.end(); } catch {}
     /* Warn on a mismatch between the selected OS and the server banner (in the status message only). The banner only reliably distinguishes whether it is Windows. */
@@ -322,4 +387,4 @@ async function testConnection(profile, secret, onLog) {
   return { ok: false, message: `Unknown protocol: ${profile.type}` };
 }
 
-module.exports = { testConnection, connectClient, openJump, connectFtpClient };
+module.exports = { testConnection, connectClient, openJump, makeProxySock, connectFtpClient };

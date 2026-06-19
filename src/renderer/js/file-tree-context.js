@@ -321,7 +321,9 @@ export function createFileTreeContextMenu({
     const newId = window.crypto?.randomUUID?.() ?? `r${Date.now()}`;
     /* derivedRemote: marks a "folder project" as distinct from a connection profile. It shows in the project panel
        but not in the site manager, and deleting it leaves the connection profile safe (it holds its own copy of the secret). */
-    const project = { ...source, id: newId, name, defaultPath, derivedRemote: true };
+    /* apiKey is a connection-profile-level quick-open identifier and must stay unique — never copy it onto a folder project
+       (a duplicate key would otherwise trip the uniqueness check when editing the origin profile). */
+    const project = { ...source, id: newId, name, defaultPath, derivedRemote: true, apiKey: '' };
     /* The secret (password/passphrase) is keyed by id, so copy it under the new id — keeps it linked even if order changes. */
     try {
       const secret = await window.oyen.remote.getSecret(source.id);
